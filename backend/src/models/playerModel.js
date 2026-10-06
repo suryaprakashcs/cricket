@@ -1,18 +1,23 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+
+const ALLOWED_ROLES = ["player", "captain", "coach", "admin"];
 
 const playerSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Name is required"],
+      trim: true,
     },
     age: {
       type: Number,
-      required: true,
+      required: [true, "Age is required"],
+      min: 5,
     },
     playerRole: {
       type: String,
-      required: true,
+      required: [true, "Player role is required"],
       enum: ["Batsman", "Bowler", "All-Rounder", "Wicket-Keeper"],
     },
     batting: {
@@ -28,23 +33,25 @@ const playerSchema = new mongoose.Schema(
     },
     city: {
       type: String,
+      trim: true,
     },
     phoneNumber: {
       type: String,
-      required: true,
+      required: [true, "Phone number is required"],
       unique: true,
       trim: true,
     },
 
     password: {
       type: String,
-      required: true,
-      minlength: 6,
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false,
     },
 
     role: {
       type: String,
-      enum: ["player", "admin"],
+      enum: ALLOWED_ROLES,
       default: "player",
     },
   },
@@ -53,6 +60,28 @@ const playerSchema = new mongoose.Schema(
   },
 );
 
+// Hash password before save
+playerSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare login password with hashed password
+playerSchema.methods.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Remove password from JSON responses
+playerSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  delete obj.__v;
+  return obj;
+};
+
 const Player = mongoose.model("Player", playerSchema);
 
 module.exports = Player;
+module.exports.ALLOWED_ROLES = ALLOWED_ROLES;
