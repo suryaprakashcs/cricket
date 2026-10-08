@@ -8,6 +8,7 @@ const {
   updatePlayer,
   deletePlayer,
   updatePlayerRole,
+  setPlayerActive,
 } = require("../controllers/playerController");
 const { protect, authorize, allowSelfOr } = require("../Middleware/auth");
 
@@ -17,7 +18,7 @@ router.use(protect);
 router
   .route("/")
   .get(getAllPlayers) // any logged-in user can list (supports ?role=&playerRole=)
-  .post(authorize("admin", "coach"), createPlayer); // only admin/coach can add profiles
+  .post(authorize("admin"), createPlayer); // only admin can add profiles
 
 router.patch(
   "/:id/role",
@@ -25,10 +26,12 @@ router.patch(
   updatePlayerRole,
 ); // role management: admin only
 
+router.patch("/:id/active", authorize("admin"), setPlayerActive); // deactivate/reactivate: admin only
+
 router
   .route("/:id")
   .get(getPlayer) // any logged-in user
-  .put(allowSelfOr("admin", "coach"), updatePlayer) // owner, admin or coach
+  .put(allowSelfOr("admin"), updatePlayer) // owner or admin
   .delete(authorize("admin"), deletePlayer); // admin only
 
 module.exports = router;

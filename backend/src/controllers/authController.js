@@ -20,7 +20,7 @@ const sendTokenResponse = (player, statusCode, res, message) => {
 };
 
 // POST /api/auth/register
-// Public, but only admins (via Bearer token) may assign coach/captain/admin roles.
+// Public, but only admins (via Bearer token) may assign captain/admin roles.
 // Everyone else is forced to "player".
 const register = async (req, res) => {
   try {
@@ -93,6 +93,10 @@ const login = async (req, res) => {
 
     if (!player) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (player.isActive === false) {
+      return res.status(403).json({ message: "Account deactivated. Contact your admin." });
     }
 
     const isMatch = await player.comparePassword(password);

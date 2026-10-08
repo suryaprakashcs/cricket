@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-royal-950 text-parchment font-body antialiased;
+  background-image:
+    radial-gradient(ellipse at top, rgba(249,224,74,0.12), transparent 55%),
+    radial-gradient(ellipse at bottom, rgba(0,43,208,0.4), transparent 65%);
+  background-attachment: fixed;
+}
+
+.font-display {
+  letter-spacing: 0.02em;
+}
+
+/* scoreboard ticker */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 30s linear infinite;
+}
+
+/* crown seam divider */
+.seam {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(249,224,74,0.8) 0 8px,
+    transparent 8px 16px
+  );
+  height: 2px;
+}

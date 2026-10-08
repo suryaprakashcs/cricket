@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const ALLOWED_ROLES = ["player", "captain", "coach", "admin"];
+const ALLOWED_ROLES = ["player", "captain", "admin"];
 
 const playerSchema = new mongoose.Schema(
   {
@@ -54,6 +54,11 @@ const playerSchema = new mongoose.Schema(
       enum: ALLOWED_ROLES,
       default: "player",
     },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -61,11 +66,10 @@ const playerSchema = new mongoose.Schema(
 );
 
 // Hash password before save
-playerSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+playerSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Compare login password with hashed password

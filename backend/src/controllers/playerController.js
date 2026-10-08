@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const Player = require("../models/playerModel");
 const { ALLOWED_ROLES } = require("../models/playerModel");
 
-// ADMIN/COACH creates a player profile directly (team management).
+// ADMIN creates a player profile directly (team management).
 // Role can only be set by admin; others default to "player".
 const createPlayer = async (req, res) => {
   try {
@@ -124,6 +124,10 @@ const getAllPlayers = async (req, res) => {
     const filter = {};
     if (req.query.role) filter.role = req.query.role;
     if (req.query.playerRole) filter.playerRole = req.query.playerRole;
+    // Deactivated players are hidden unless explicitly requested (admin)
+    if (req.query.includeInactive !== "true") {
+      filter.isActive = { $ne: false };
+    }
 
     const players = await Player.find(filter);
     res.status(200).json({
@@ -184,6 +188,41 @@ const updatePlayerRole = async (req, res) => {
   }
 };
 
+// PATCH /api/players/:id/active { isActive } — admin only (deactivate instead of delete)
+const setPlayerActive = async (req, res) => {
+  try {
+    const id = req.params.id || req.query.id;
+    if (!id) {
+      return res.status(400).json({ message: "Player ID is required" });
+    }
+    if (typeof req.body.isActive !== "boolean") {
+      return res.status(400).json({ message: "isActive (boolean) is required" });
+    }
+    // Never deactivate yourself or the last admin
+    if (req.user._id.toString() === id.toString() && req.body.isActive === false) {
+      return res.status(400).json({ message: "You cannot deactivate your own account" });
+    }
+    const target = await Player.findById(id);
+    if (!target) {
+      return res.status(404).json({ message: "Player not found" });
+    }
+    if (target.role === "admin" && req.body.isActive === false) {
+      const adminCount = await Player.countDocuments({ role: "admin", isActive: { $ne: false } });
+      if (adminCount <= 1) {
+        return res.status(400).json({ message: "Cannot deactivate the last remaining admin" });
+      }
+    }
+    target.isActive = req.body.isActive;
+    await target.save();
+    res.status(200).json({
+      message: req.body.isActive ? "Player reactivated" : "Player deactivated",
+      data: target.toJSON(),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   createPlayer,
   getAllPlayers,
@@ -191,4 +230,5 @@ module.exports = {
   deletePlayer,
   updatePlayer,
   updatePlayerRole,
+  setPlayerActive,
 };

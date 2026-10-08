@@ -53,7 +53,7 @@ const optionalAuth = async (req, _res, next) => {
   next();
 };
 
-// Grant access to specific roles: authorize("admin", "coach")
+// Grant access to specific roles: authorize("admin")
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -69,7 +69,7 @@ const authorize = (...roles) => {
 };
 
 // Allow owner of the resource OR privileged roles.
-// Usage: allowSelfOr("admin", "coach") on PUT /api/players/:id
+// Usage: allowSelfOr("admin") on PUT /api/players/:id
 const allowSelfOr = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
